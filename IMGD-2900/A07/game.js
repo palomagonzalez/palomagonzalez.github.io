@@ -53,38 +53,45 @@ game.js for Perlenspiel 3.3.x
 Last revision: 2020-03-24 (BM)
 */
 
-// Constants
-var WIDTH = 32; // width of grid
-var HEIGHT = 32; // height of grid
+// CONSTANTS
+var WIDTH = 32;                     // width of grid
+var HEIGHT = 32;                    // height of grid
 
-// Global variables
-var level = 1;
-var firstTime = true;
-var inventory = false;
-var journal = false;
-var objectX = false;
-var hidingObjOpacity = 255;
+
+// GLOBAL VARIABLES
+var level = 1;                      // level tracker
+var firstTime = true;               // first time in level?
+var inventory = false;              // in inventory?
+var journal = false;                // Cooper has diary
+var objectX = false;                // Cooper has Leland's wallet
+var hidingObjOpacity = 255;         // opacity of the sprite hiding wallet
+var lelandOfferedJournal = false;   // has Leland offered the diary to Harry?
+var gameDone = false;               // end of game
+
+// sprites declarations
 var cooperSprite, harrySprite, lelandSprite, objectXSprite, hidingSprite;
 var bubbleSprite = "", journalSprite = "", crossSprite = "", congratsSprite = "";
 var journalBWSprite = "", objectXBWSprite = "", journalInvSprite = "", objectXInvSprite = "";
-var xCoop = 1, yCoop = 18;     // Coop's position
-var xobjX = 16, yobjX = 27;
-var currentStatusText;
 var notificationSprite = "";
-var lelandOfferedJournal = false;
-var gameDone = false;
+
+var xCoop = 1, yCoop = 18;          // Coop's position
+var xobjX = 16, yobjX = 27;         // wallet's position
+var currentStatusText;              // text in the status box
+
+// for timer's use
+var path = null;                    // path to follow, null if none
+var step = 0;                       // current step on path
 
 
-var path = null; // path to follow, null if none
-var step = 0; // current step on path
+// GLOBAL FUNCTIONS
 
-//Global functions
-
+// draw sprite when Harry congrats Cooper
 harryCongrats = function () {
 
     var myImage, mySprite;
 
-    // load and draw bubble
+    // load and draw flying colors
+
     PS.imageLoad( "images/congrats.png", function ( data ) {
         myImage = data; // save image ID
 
@@ -96,12 +103,18 @@ harryCongrats = function () {
         PS.spritePlane( mySprite, 4 );
         PS.spriteMove( mySprite, 22, 13 );
 
+        //change status text
+        currentStatusText = "Congrats!";
+        PS.statusText( currentStatusText );
+
+        //plays little congrats audio
+        PS.audioPlay( "fx_tada" );
+
         congratsSprite = mySprite;        // Save for using later
     } );
-
-
 }
 
+// draw bubble and sprite when Leland says no
 bocadilloCruzLeland = function () {
 
     var myImage, mySprite;
@@ -135,9 +148,9 @@ bocadilloCruzLeland = function () {
 
         crossSprite = mySprite;        // Save for using later
     } );
-
 }
 
+// draw bubble and sprite when Leland offers diary
 bocadilloDiarioLeland = function () {
 
     var myImage, mySprite;
@@ -157,10 +170,9 @@ bocadilloDiarioLeland = function () {
         journalSprite = mySprite;        // Save for using later
         lelandOfferedJournal = true;
     } );
-
-
 }
 
+// draw bubble and sprite when harry asks for the diary
 bocadilloDiarioHarry = function () {
 
     var myImage, mySprite;
@@ -194,8 +206,6 @@ bocadilloDiarioHarry = function () {
 
         journalSprite = mySprite;        // Save for using later
     } );
-
-
 }
 
 // Timer function, called every 1/10th sec
@@ -203,23 +213,21 @@ tick = function () {
 
     var p, nx, ny;
 
-    if ( path ) { // path ready (not null)?
-        // Get next point on path
+    if ( path ) {                       // path ready (not null)?
 
+        // Get next point on path
         p = path[ step ];
         nx = p[ 0 ]; // next x-pos
         ny = p[ 1 ]; // next y-pos
 
         // If Cooper already at next pos,
         // path is exhausted, so nuke it
-
         if ( ( xCoop === nx ) && ( yCoop === ny ) ) {
             path = null;
             return;
         }
 
         // Move sprite to next position
-
         PS.spriteMove( cooperSprite, nx, ny );
         xCoop = nx; // update xCoop
         yCoop = ny; // and yCoop
@@ -235,29 +243,22 @@ tick = function () {
 
         }
 
-
-        step += 1; // point to next step
+        step += 1;                      // point to next step
 
         // If no more steps, nuke path
-
         if ( step >= path.length ) {
             path = null;
         }
     }
 }
 
-
-loadBG = function ( imageData ) {         // 'MYLOADER' PARA LOS BACKGROUNDS (LOS CARGA Y LOS DIBUJA)
+// load and draw main screen backgrounds
+loadBG = function ( imageData ) {
 
     // The image argument of loadBG() is passed
     // an image object representing *.bmp
 
-    // Report imageData in debugger
-
     var imagen = imageData;
-
-
-
     var x, y, ptr, color;
 
     ptr = 0; // init pointer into data array
@@ -269,21 +270,17 @@ loadBG = function ( imageData ) {         // 'MYLOADER' PARA LOS BACKGROUNDS (LO
         }
     }
 
-    PS.gridRefresh();
-
+    PS.gridRefresh();                   // required to show effect of bead coloring
 }
 
-loadScreentop = function ( imageData ) {         // 'MYLOADER' PARA FLECHAS Y MALETÍN (LOS CARGA Y LOS DIBUJA)
+// load and draw screen top background
+loadScreentop = function ( imageData ) {
 
     // The image argument of loadScreentop() is passed
     // an image object representing *.bmp
 
-    // Report imageData in debugger
-
     var imagen = imageData;
-
-
-    var x, y, ptr, color; // *BM* These variables weren't declared anywhere
+    var x, y, ptr, color;
 
     ptr = 0; // init pointer into data array
     for ( y = 0; y < 7; y += 1 ) {
@@ -294,12 +291,12 @@ loadScreentop = function ( imageData ) {         // 'MYLOADER' PARA FLECHAS Y MA
         }
     }
 
-    PS.gridRefresh();
-
+    PS.gridRefresh();                   // required to show effect of bead coloring
 }
 
-//pintar flecha derecha
+// draw and activate/deactivate right arrow
 paintRightArrow = function ( activate ) {
+
     if ( !activate ) {
         PS.color( 28, 1, 0xc7c7c7 );
         PS.color( 28, 2, 0xc7c7c7 );
@@ -343,8 +340,9 @@ paintRightArrow = function ( activate ) {
     }
 };
 
-//pintar flecha izquierda
+// draw and activate/deactivate left arrow
 paintLeftArrow = function ( activate ) {
+
     if ( !activate ) {
         PS.color( 3, 1, 0xc7c7c7 );
         PS.color( 3, 2, 0xc7c7c7 );
@@ -388,12 +386,14 @@ paintLeftArrow = function ( activate ) {
     }
 };
 
+// present the inventory screen
 initInventory = function () {
-    inventory = true;
+
+    inventory = true;                           // entered inventory
 
     var myImage, mySprite;
 
-    // load and draw bubble
+    // load and draw BW (inactive) diary inventory sprite
     PS.imageLoad( "images/journal_inv_bw.png", function ( data ) {
         myImage = data; // save image ID
 
@@ -405,12 +405,10 @@ initInventory = function () {
         PS.spritePlane( mySprite, 4 );
         PS.spriteMove( mySprite, 3, 10 );
 
-        journalBWSprite = mySprite;        // Save for using later
+        journalBWSprite = mySprite;             // Save for using later
     } );
 
-    var myImage, mySprite;
-
-    // load and draw bubble
+    // load and draw BW (inactive) wallet inventory sprite
     PS.imageLoad( "images/objectX_bw.png", function ( data ) {
         myImage = data; // save image ID
 
@@ -422,12 +420,10 @@ initInventory = function () {
         PS.spritePlane( mySprite, 4 );
         PS.spriteMove( mySprite, 10, 10 );
 
-        objectXBWSprite = mySprite;        // Save for using later
+        objectXBWSprite = mySprite;             // Save for using later
     } );
 
-    var myImage, mySprite;
-
-    // load and draw bubble
+    // load and draw colored (active) diary inventory sprite
     PS.imageLoad( "images/journal_inv.png", function ( data ) {
         myImage = data; // save image ID
 
@@ -439,8 +435,9 @@ initInventory = function () {
         PS.spritePlane( mySprite, 5 );
         PS.spriteMove( mySprite, 3, 10 );
 
-        journalInvSprite = mySprite;        // Save for using later
+        journalInvSprite = mySprite;                // Save for using later
 
+        // only visible if Coop's got the diary in his inventory
         if ( journal ) {
             PS.spriteShow( journalInvSprite, true );
 
@@ -449,9 +446,7 @@ initInventory = function () {
         }
     } );
 
-    var myImage, mySprite;
-
-    // load and draw bubble
+    // load and draw colored (active) wallet inventory sprite
     PS.imageLoad( "images/objectX.png", function ( data ) {
         myImage = data; // save image ID
 
@@ -463,8 +458,9 @@ initInventory = function () {
         PS.spritePlane( mySprite, 5 );
         PS.spriteMove( mySprite, 10, 10 );
 
-        objectXInvSprite = mySprite;        // Save for using later
+        objectXInvSprite = mySprite;                // Save for using later
 
+        // only visible if Coop's got the wallet in his inventory
         if ( objectX ) {
             PS.spriteShow( objectXInvSprite, true );
 
@@ -473,22 +469,26 @@ initInventory = function () {
         }
     } );
 
+    // deactivate both arrows
     paintLeftArrow( false );
     paintRightArrow( false );
+
+    // load and draw inventory background
     PS.imageLoad( "images/inventory.png", loadBG, 1 );
     PS.statusText( "Welcome to your inventory!" );
 };
 
+// present level 1
 initLevel1 = function () {
 
+    // set status text
     currentStatusText = "Talk to Sheriff Truman";
     PS.statusText( currentStatusText );
 
-    // CARGAR Y DIBUJAR LA STATION
-
+    // load and draw station background
     PS.imageLoad( "images/sheriffstation.png", loadBG, 1 );
 
-    // CARGAR, CREAR Y DIBUJAR A COOPER
+    // load, create and draw Special Agent Dale Cooper
 
     var myImage, mySprite;
 
@@ -500,17 +500,13 @@ initLevel1 = function () {
 
         mySprite = PS.spriteImage( myImage );
 
-
         PS.spritePlane( mySprite, 1 );
         PS.spriteMove( mySprite, 1, 18 );
 
-        cooperSprite = mySprite;        // Save for using later
-
+        cooperSprite = mySprite;                // Save for using later
     } );
 
-    //CARGAR, CREAR Y DIBUJAR A HARRY
-
-    var myImage, mySprite;
+    // load, create and draw Sheriff Harry S. Truman
 
     PS.imageLoad( "images/sherifftruman.png", function ( data ) {
         myImage = data; // save image ID
@@ -520,36 +516,32 @@ initLevel1 = function () {
 
         mySprite = PS.spriteImage( myImage );
 
-
-
         PS.spritePlane( mySprite, 1 );
         PS.spriteMove( mySprite, 26, 18 );
 
-        harrySprite = mySprite;        // Save for using later
-
+        harrySprite = mySprite;                 // Save for using later
     } );
 
-    // INICIALIZA VARIABLES DE CONTROL DEL NIVEL
-
+    // set level control variables
     level = 1;
     firstTime = false;
 
+    // activate the corresponding arrows
     paintLeftArrow( false );
     paintRightArrow( true );
-
 }
 
+// present level 2
 initLevel2 = function () {
 
+    // set status text
     currentStatusText = "Talk to Leland Palmer";
     PS.statusText( currentStatusText );
 
-
-    //CARGAR Y DIBUJAR LA CASA DE LAURA
-
+    // load and draw Laura Palmer's home
     PS.imageLoad( "images/palmer_house.png", loadBG, 1 );
 
-    // CARGAR, CREAR Y DIBUJAR A COOPER
+    // load, create and draw Special Agent Dale Cooper
 
     var myImage, mySprite;
 
@@ -562,18 +554,13 @@ initLevel2 = function () {
         mySprite = PS.spriteImage( myImage );
 
 
-
-
         PS.spritePlane( mySprite, 1 );
         PS.spriteMove( mySprite, 1, 18 );
 
-        cooperSprite = mySprite;        // Save for using later
-
+        cooperSprite = mySprite;                // Save for using later
     } );
 
-    //CARGAR, CREAR Y DIBUJAR A LELAND
-
-    var myImage, mySprite;
+    // load, create and draw Mr. Leland Palmer
 
     PS.imageLoad( "images/leland.png", function ( data ) {
         myImage = data; // save image ID
@@ -583,35 +570,32 @@ initLevel2 = function () {
 
         mySprite = PS.spriteImage( myImage );
 
-
-
         PS.spritePlane( mySprite, 1 );
         PS.spriteMove( mySprite, 26, 18 );
 
-        lelandSprite = mySprite;        // Save for using later
-
+        lelandSprite = mySprite;                // Save for using later
     } );
 
-    // INICIALIZA VARIABLES DE CONTROL DEL NIVEL
-
+    // set level control variables
     level = 2;
     firstTime = false;
 
+    // activate the corresponding arrows
     paintLeftArrow( true );
     paintRightArrow( true );
-
 }
 
+// present level 3
 initLevel3 = function () {
 
+    // set status text
     currentStatusText = "Move around!";
     PS.statusText( currentStatusText );
 
-    //CARGAR Y DIBUJAR OUTSIDE AREA
-    //PS.spriteShow( lelandSprite, false );
+    // load and draw area outside Double R diner
     PS.imageLoad( "images/outside_area.png", loadBG, 1 );
 
-    // CARGAR, CREAR Y DIBUJAR A COOPER
+    // load, create and draw Special Agent Dale Cooper
 
     var myImage, mySprite;
 
@@ -623,131 +607,98 @@ initLevel3 = function () {
 
         mySprite = PS.spriteImage( myImage );
 
-
-
-
-        PS.spritePlane( mySprite, 3 );
-
+        PS.spritePlane( mySprite, 3 );              // Cooper is on top
         PS.spriteMove( mySprite, xCoop, yCoop );
 
-        cooperSprite = mySprite;        // Save for using later
-
+        cooperSprite = mySprite;                    // Save for using later
     } );
 
 
-    //CARGAR Y CREAR EL OBJETO X
-    if ( !objectX ) {
+    // load, create and draw Leland's wallet sprite
+
+    if ( !objectX ) {                               // Cooper hasn't got the wallet yet
         PS.imageLoad( "images/objectX.png", function ( data ) {
             myImage = data; // save image ID
 
             // Create an image sprite from the loaded image
             // Save sprite ID for later reference
 
-            mySprite = PS.spriteImage( myImage );
-
-
+            mySprite = PS.spriteImage( myImage );   // wallet is on bottom
 
             PS.spritePlane( mySprite, 1 );
-
             PS.spriteMove( mySprite, xobjX, yobjX );
 
-            objectXSprite = mySprite;        // Save for using later
-
+            objectXSprite = mySprite;               // Save for using later
         } );
-
     }
 
-    //OCULTAR EL OBJETO X CON UN SPRITE ENCIMA
+    // create and draw a sprite hiding Leland's wallet
 
     mySprite = PS.spriteSolid( 5, 5 );
-
     hidingSprite = mySprite;
 
-    PS.spritePlane( hidingSprite, 2 );
-    PS.spriteSolidColor( hidingSprite, 0x989898 );
+    PS.spritePlane( hidingSprite, 2 );              // between Coop and the wallet
+    PS.spriteSolidColor( hidingSprite, 0x989898 );  // same color as background
     PS.spriteMove( hidingSprite, xobjX, yobjX );
-    PS.spriteSolidAlpha( hidingSprite, hidingObjOpacity );
+    PS.spriteSolidAlpha( hidingSprite, hidingObjOpacity );  // fully opaque at first
 
-    // INICIALIZA VARIABLES DE CONTROL DEL NIVEL
-
+    // set level control variables
     level = 3;
     firstTime = false;
 
+    // activate the corresponding arrows
     paintLeftArrow( true );
     paintRightArrow( false );
 }
 
-// INICIALIZACIÓN DEL JUEGO
 
+// GAME INITIALIZATION
 PS.init = function ( system, options ) {
 
-    //PINTA LA REJILLA Y EL BORDE DE SEPARACIÓN
-
-
+    // set the grid and draw separator between top and main screen zones
     PS.gridSize( WIDTH, HEIGHT );
-    PS.gridColor( PS.GRAY );  // HABRÁ QUE REVISARLO PORQUE NO SÉ MUY BIEN SI LO ESTÁ HACIENDO
-    PS.border( PS.ALL, PS.ALL, 0 ); // no border...
-    // ...except for the separation between screen areas
-    PS.border( PS.ALL, 6, {
-        top: 0,
+    PS.border( PS.ALL, PS.ALL, 0 );                 // no border...
+    PS.border( PS.ALL, 6, {                         // ...except for the separation
+        top: 0,                                     //    between screen areas
         left: 0,
         bottom: 6,
         right: 0
     } );
     PS.borderColor( PS.ALL, 6, PS.COLOR_WHITE );
 
-    //loading the background music
-    PS.audioPlay("twin_peaks_8_bit", {
-        fileTypes: ["mp3", "ogg"],
+    // load the background music
+    PS.audioPlay( "twin_peaks_8_bit", {
+        fileTypes: [ "mp3", "ogg" ],
         path: "./",
         volume: 0.08,
         loop: true
-    });
-
-
-    //DB functions
-    DB.active( true ); // change the call parameter to false to disable DB calls
-    DB.init( "dbdemo" ); // Initialize the API
-
+    } );
 
     // Start the timer function
-    // Run at 10 frames/sec (every 6 ticks)
+    // Run at 20 frames/sec (every 3 ticks)
+    PS.timerStart( 3, tick );
 
-    PS.timerStart( 3, tick );  // the greater the parameter, the slower Cooper moves
+    PS.audioLoad( "fx_tada" );                      // preload end of game sound
 
-    PS.audioLoad("fx_tada");
-
-
-
-    // CARGA Y DIBUJA LA FLECHA Y EL MALETÍN
-
+    // load and draw the screen top background
     PS.imageLoad( "images/flechas_y_maletin.png", loadScreentop, 1 );
 
-
-
-
-
-    // INICIALIZA EL NIVEL 1   **** AQUÍ PROPONE TGG HACER UN 'NIVEL 0' QUE SOLO HAYA QUE HACER CLICK ****
-
+    // present level 1
     initLevel1();
 };
 
 
-// TRATAMIENTO DEL EVENTO CLICK EN LA CELDA X, Y (QUE TIENE DATOS = data)
-
+// POINT-AND-CLICK HANDLING
 PS.touch = function ( x, y, data, options ) {
 
+    PS.audioPlay( "fx_click" );                     // provides click audio feedback
 
-    PS.audioPlay( "fx_click" ); // provides auditive feedback
-
-    if ( ( x > 26 ) && ( y < 7 ) ) {            // TRATAMIENTO DE LOS CLICKS EN LA FLECHA DERECHA
+    if ( ( x > 26 ) && ( y < 7 ) ) {                // CLICK ON RIGHT ARROW
         firstTime = false;
 
-        // borra los sprites anteriores
-
-        PS.spriteDelete( cooperSprite );
-
-        switch ( level ) {
+        // nuke sprites from previous level
+        PS.spriteDelete( cooperSprite );            // Cooper is always there
+        switch ( level ) {                          // rest of sprites
             case 1:
                 PS.spriteDelete( harrySprite );
                 if ( bubbleSprite != "" ) {
@@ -777,32 +728,25 @@ PS.touch = function ( x, y, data, options ) {
                     PS.spriteDelete( crossSprite );
                     crossSprite = "";
                 }
-
         }
 
+        // go to next level
         level += 1;
-
-
-
         switch ( level ) {
-            //case 1:               **** ESTE CASE SE PUEDE BORRAR PORQUE NUNCA LLEGARÁ AL NIVEL 1 CON LA FLECHA DERECHA
-            //    initLevel1();
-            //    break;
-            case 2:
-
+            case 2:                                 // level 1 is unreachable from right arrow
                 initLevel2();
                 break;
             case 3:
                 initLevel3();
         }
-    } else if ( ( x < 5 ) && ( y < 7 ) ) {     // TRATAMIENTO DE LOS CLICKS EN LA FLECHA IZQUIERDA
+
+
+    } else if ( ( x < 5 ) && ( y < 7 ) ) {          // CLICK ON LEFT ARROW
         firstTime = false;
 
-        // borra los sprites anteriores
-
-        PS.spriteDelete( cooperSprite );
-
-        switch ( level ) {
+        // nuke sprites from previous levelS
+        PS.spriteDelete( cooperSprite );            // Cooper is always there
+        switch ( level ) {                          // rest of sprites
             case 1:
                 PS.spriteDelete( harrySprite );
                 if ( bubbleSprite != "" ) {
@@ -838,32 +782,27 @@ PS.touch = function ( x, y, data, options ) {
                     PS.spriteDelete( objectXSprite );
                     PS.spriteDelete( hidingSprite );
                 }
-
-
         }
 
+        // go to previous level
         level -= 1;
-
-
         switch ( level ) {
             case 1:
                 initLevel1();
                 break;
-            case 2:
+            case 2:                                 // level 3 is unreachable from left arrow
                 initLevel2();
-            //    break;            **** ESTE CASE SE PUEDE BORRAR PORQUE NUNCA LLEGARÁ AL NIVEL 3 CON LA FLECHA IZQUIERDA
-            //case 3:
-            //    initLevel3();
-
         }
 
-    } else if ( ( x > 11 && x < 20 ) && ( y < 7 ) ) {
+    } else if ( ( x > 11 && x < 20 ) &&             // CLICK ON INVENTORY
+        ( y < 7 ) ) {
 
-        //FUNCIÓN DE INICIO DEL INVENTARIO
-        var prevStatusText = currentStatusText;
+        var prevStatusText = currentStatusText;     // save status text for later use
+        if( gameDone ){
 
-        if ( inventory == false ) {
-            switch ( level ) {
+        }
+        else if ( inventory == false ) {                 // when not on inventory screen...
+            switch ( level ) {                      // ...hide current sprites...
                 case 1:
                     PS.spriteShow( harrySprite, false );
                     PS.spriteShow( cooperSprite, false );
@@ -876,9 +815,6 @@ PS.touch = function ( x, y, data, options ) {
                     if ( congratsSprite != "" ) {
                         PS.spriteShow( congratsSprite, false );
                     }
-
-
-                    initInventory();
                     break;
                 case 2:
                     PS.spriteShow( lelandSprite, false );
@@ -892,9 +828,6 @@ PS.touch = function ( x, y, data, options ) {
                     if ( crossSprite != "" ) {
                         PS.spriteShow( crossSprite, false );
                     }
-
-
-                    initInventory();
                     break;
                 case 3:
                     PS.spriteShow( cooperSprite, false );
@@ -902,21 +835,19 @@ PS.touch = function ( x, y, data, options ) {
                     if ( objectXSprite != "" ) {
                         PS.spriteShow( objectXSprite, false );
                     }
-
-
-                    initInventory();
             }
+            initInventory();                        // ...and present inventory
 
             if ( notificationSprite != "" ) {
                 PS.spriteDelete( notificationSprite );
                 notificationSprite = "";
             }
 
-        } else {
+        } else {                                    // when on inventory screen...
             switch ( level ) {
                 case 1:
-                    initLevel1();
-                    if ( journalBWSprite != "" ) {
+                    initLevel1();                   // ...launch level...
+                    if ( journalBWSprite != "" ) {  // ...recover the corresponding sprites...
                         PS.spriteShow( journalBWSprite, false );
                     }
                     if ( objectXBWSprite != "" ) {
@@ -937,8 +868,6 @@ PS.touch = function ( x, y, data, options ) {
                     if ( congratsSprite != "" ) {
                         PS.spriteShow( congratsSprite, true );
                     }
-                    inventory = false;
-                    //harryCongrats();
                     break;
                 case 2:
                     initLevel2();
@@ -964,8 +893,6 @@ PS.touch = function ( x, y, data, options ) {
                     if ( crossSprite != "" ) {
                         PS.spriteShow( crossSprite, true );
                     }
-                    inventory = false;
-                    //bocadilloDiarioLeland();
                     break;
                 case 3:
                     initLevel3();
@@ -981,178 +908,158 @@ PS.touch = function ( x, y, data, options ) {
                     if ( objectXInvSprite != "" ) {
                         PS.spriteShow( objectXInvSprite, false );
                     }
-                    inventory = false;
                     break;
             }
-
-            PS.statusText( prevStatusText );
+            PS.statusText( prevStatusText );        // ...and the status text
             currentStatusText = prevStatusText;
+
+            inventory = false;                        // out of inventory screen
+
         }
 
-    } else {
-        // TRATAMIENTO DE LOS CLICKS EN CUALQUIER OTRO SITIO
-
-
-
+    } else {                                        // CLICK ON MAIN SCREEN
 
         switch ( level ) {
-            case 1:
-                if ( firstTime ) {
-                    initLevel1();
-                } else {
-                    if ( ( ( x > 26 && x < 30 ) && ( y > 17 && y < 21 ) ) | ( ( x == 28 ) && ( y == 21 ) ) | ( ( x > 25 && x < 31 ) && ( y > 21 && y < 27 ) ) | ( ( x > 26 && x < 30 ) && y > 26 ) ) {
+            case 1:                                 // when on level 1
+                if ( firstTime ) {                  // if first time on level 1
+                    initLevel1();                   // initialize and present level 1
 
+                } else {                            // if not first time
 
-                        if ( journal ) {
-                            // PINTA A HARRY FELIZ CON LINEAS ALREDEDOR
-                            harryCongrats();
-                            journal = false;
+                    if ( ( ( x > 26 && x < 30 ) && ( y > 17 && y < 21 ) ) |     // click on Harry
+                        ( ( x == 28 ) && ( y == 21 ) ) |
+                        ( ( x > 25 && x < 31 ) && ( y > 21 && y < 27 ) )
+                        | ( ( x > 26 && x < 30 ) && y > 26 ) ) {
 
-                            //change status text
-                            currentStatusText = "Congrats!";
-                            PS.statusText( currentStatusText );
-                            //plays little congrats audio
-                            PS.audioPlay("fx_tada");
+                        if ( journal ) {            // if Cooper has diary
+                            harryCongrats();        // Harry congratulates Coop
+                            journal = false;        // Cooper delivers diary
 
-                            paintRightArrow(false);
-                            paintLeftArrow(false);
+                            // deactivate arrows
+                            paintRightArrow( false );
+                            paintLeftArrow( false );
 
+                            // end of game, stop showing notification sprite once you give journal to harry
+                            PS.spriteShow(notificationSprite, false);
                             gameDone = true;
 
-                            //PS.active(PS.ALL, PS.ALL, false);
+                        } else if ( !gameDone ) {       // if game not done yet
+                            bocadilloDiarioHarry();     // Harry speaks to Cooper
 
-                            DB.send();
-
-                        } else if (gameDone){
-
-                        }
-                        else {
-                            // PINTA BOCADILLO CON DIARIO
-                            bocadilloDiarioHarry();
-
-
-                            //CHANGE STATUS TEXT TO "FIND THE DIARY"
+                            //change status text
                             currentStatusText = "Find the diary!";
                             PS.statusText( currentStatusText );
-
                         }
                     }
                 }
                 break;
-            case 2:
-                if ( firstTime ) {
-                    initLevel2()
-                } else {
+            case 2:                                 // when on level 2
+                if ( firstTime ) {                  // if first time on level
+                    initLevel2()                    // initialize and present level 2
 
+                } else {                            // if not first time
 
-                    if ( !journal ) {
-                        if ( lelandOfferedJournal ) {
-                            //AQUI
-                            if ( ( x > 19 && x < 25 ) && ( y > 18 && y < 24 ) ) {
-                                journal = true;
+                    if ( !journal ) {               // if Coop has not the diary yet
+                        if ( lelandOfferedJournal ) {   // but Leland offered it
+                            if ( ( x > 19 && x < 25 ) &&   // if click on diary
+                                ( y > 18 && y < 24 ) ) {
+
+                                // move diary to inventory
+                                journal = true;     // got diary
                                 PS.spriteDelete( journalSprite );
                                 journalSprite = "";
 
+                                // notify new item in inventory
                                 var mySprite;
                                 mySprite = PS.spriteSolid( 2, 2 );
                                 PS.spriteSolidColor( mySprite, PS.COLOR_RED );
                                 PS.spriteMove( mySprite, 20, 0 );
                                 notificationSprite = mySprite;
 
+                                // change status text
                                 currentStatusText = "You collected the diary!";
-                                PS.statusText(currentStatusText);
+                                PS.statusText( currentStatusText );
                             }
-
                         }
-
                     }
 
-                    if ( ( ( x > 26 && x < 30 ) && ( y > 17 && y < 21 ) ) | ( ( x == 28 ) && ( y == 21 ) ) | ( ( x > 25 && x < 31 ) && ( y > 21 && y < 27 ) ) | ( ( x > 26 && x < 30 ) && y > 26 ) ) {
-                        if ( objectX ) {
-                            //change status text
+                    if ( ( ( x > 26 && x < 30 ) && ( y > 17 && y < 21 ) ) |  // if click on Leland
+                        ( ( x == 28 ) && ( y == 21 ) ) |
+                        ( ( x > 25 && x < 31 ) && ( y > 21 && y < 27 ) ) |
+                        ( ( x > 26 && x < 30 ) && y > 26 ) ) {
+
+                        if ( objectX ) {            // and Cooper got the wallet
+
+                            objectX = false;        // Cooper delivers wallet
+
+                            // change status text
                             currentStatusText = "Look! It's the diary!";
-
-                            objectX = false;
-
                             PS.statusText( currentStatusText );
 
-                            //PINTA BOCADILLO CON DIARIO
-                            bocadilloDiarioLeland();
+                            bocadilloDiarioLeland(); // Leland speaks to Cooper
 
-                            //AÑADE EL DIARIO AL INVENTARIO
+                        } else {                    // Coop didn't get the wallet yet
 
-
-                        } else {
                             //change status text
                             currentStatusText = "Find Leland's wallet";
                             PS.statusText( currentStatusText );
 
-                            // PINTA BOCADILLO CON CRUZ DE NO
-                            bocadilloCruzLeland();
-
+                            bocadilloCruzLeland();  // Leland says no
                         }
                     }
                 }
                 break;
-            case 3:
-                if ( firstTime ) {
-                    initLevel3()
-                } else {
-                    if ( !objectX ) {
 
-                        if ( hidingObjOpacity < 2 ) {
-                            if ( ( x > ( xobjX - 1 ) && x < ( xobjX + 5 ) ) && ( y > ( yobjX - 1 ) && y < ( yobjX + 5 ) ) ) {
+            case 3:                                 // when on level 3
 
+                if ( firstTime ) {                  // if first time on level
+                    initLevel3()                    // initialize and present level 3
+
+                } else {                            // if not first time
+
+                    if ( !objectX ) {               // if Coop didn't get the wallet yet
+
+                        if ( hidingObjOpacity < 2 ) {       // if wallet fully visible
+                            if ( ( x > ( xobjX - 1 ) &&     // if click on wallet
+                                x < ( xobjX + 5 ) ) &&
+                                ( y > ( yobjX - 1 ) &&
+                                    y < ( yobjX + 5 ) ) ) {
+
+                                // move wallet to inventory
                                 objectX = true;
                                 PS.spriteDelete( objectXSprite );
                                 objectXSprite = "";
 
+                                // notify new item in inventory
                                 var mySprite;
                                 mySprite = PS.spriteSolid( 2, 2 );
                                 PS.spriteSolidColor( mySprite, PS.COLOR_RED );
                                 PS.spriteMove( mySprite, 20, 0 );
                                 notificationSprite = mySprite;
 
+                                // change status text
                                 currentStatusText = "Good job! You found Leland's wallet!"
-                                PS.statusText(currentStatusText);
-
+                                PS.statusText( currentStatusText );
                             }
-                        } else {
 
+                        } else {                    // if wallet not fully revealed
 
-                            // move Cooper
-
+                            // move Cooper = create new path to (x, yCoop)
                             var line;
 
                             // Calc a line from current position
                             // to touched position
-
                             line = PS.line( xCoop, yCoop, ( x - 2 ), yCoop );
 
                             // If line is not empty,
                             // make it the new path
-
                             if ( line.length > 0 ) {
                                 path = line;
                                 step = 0; // start at beginning
                             }
-
                         }
-
-
-                        // VA HACIENDO APARECER EL OBJETO X
-                        /*
-                        if ( EnElCaminoPasaPorElObjetoX ) {
-                            objXOpacity += .25;
-                        }
-                        if ( objXOpacity == 1 ) {
-                            objectX = true;
-                        }
-                         */
-
                     }
                 }
         }
     }
-}
-;
+};
