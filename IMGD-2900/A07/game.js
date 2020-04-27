@@ -655,6 +655,11 @@ initLevel3 = function () {
 // GAME INITIALIZATION
 PS.init = function ( system, options ) {
 
+    var complete = function ( user ) {
+        currentStatusText = "Talk to Sheriff Truman";
+        PS.statusText( currentStatusText );
+    };
+
     // set the grid and draw separator between top and main screen zones
     PS.gridSize( WIDTH, HEIGHT );
     PS.border( PS.ALL, PS.ALL, 0 );                 // no border...
@@ -665,6 +670,8 @@ PS.init = function ( system, options ) {
         right: 0
     } );
     PS.borderColor( PS.ALL, 6, PS.COLOR_WHITE );
+
+
 
     // load the background music
     PS.audioPlay( "twin_peaks_8_bit", {
@@ -683,8 +690,13 @@ PS.init = function ( system, options ) {
     // load and draw the screen top background
     PS.imageLoad( "images/flechas_y_maletin.png", loadScreentop, 1 );
 
+
+
     // present level 1
     initLevel1();
+
+    DB.active( true ); // change the parameter to false to disable DB calls
+    DB.init( "wrappedinplastic", complete ); // Collect credentials, and THEN call complete()
 };
 
 
@@ -940,8 +952,11 @@ PS.touch = function ( x, y, data, options ) {
                             paintLeftArrow( false );
 
                             // end of game, stop showing notification sprite once you give journal to harry
-                            PS.spriteShow(notificationSprite, false);
+                            if(notificationSprite != ""){
+                                PS.spriteShow(notificationSprite, false);
+                            }
                             gameDone = true;
+                            DB.send();
 
                         } else if ( !gameDone ) {       // if game not done yet
                             bocadilloDiarioHarry();     // Harry speaks to Cooper
