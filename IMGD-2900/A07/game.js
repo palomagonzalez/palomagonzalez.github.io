@@ -696,12 +696,22 @@ PS.init = function ( system, options ) {
     } );
     PS.borderColor( PS.ALL, 6, PS.COLOR_WHITE );
 
-    // Start the timer function
-    // Run at 10 frames/sec (every 6 ticks)
+    //loading the background music
+    PS.audioPlay("twin_peaks_8_bit", {
+        fileTypes: ["mp3", "ogg"],
+        path: "./",
+        volume: 0.08,
+        loop: true
+    });
+
 
     //DB functions
     DB.active( true ); // change the call parameter to false to disable DB calls
     DB.init( "dbdemo" ); // Initialize the API
+
+
+    // Start the timer function
+    // Run at 10 frames/sec (every 6 ticks)
 
     PS.timerStart( 3, tick );  // the greater the parameter, the slower Cooper moves
 
