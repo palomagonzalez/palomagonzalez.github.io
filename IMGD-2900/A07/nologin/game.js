@@ -67,6 +67,14 @@ var objectX = false;                // Cooper has Leland's wallet
 var hidingObjOpacity = 255;         // opacity of the sprite hiding wallet
 var lelandOfferedJournal = false;   // has Leland offered the diary to Harry?
 var gameDone = false;               // end of game
+var achievement = 0;                  // 0 - no progress yet
+                                      // 1 - spoke to Harry (first time)
+                                      // 2 - spoke to Leland (first time)
+                                      // 3 - wallet revealed
+                                      // 4 - picked up wallet
+                                      // 5 - spoke to Leland (second time)
+                                      // 6 - picked up diary
+                                      // 7 - spoke to Harry (second time)
 
 // sprites declarations
 var cooperSprite, harrySprite, lelandSprite, objectXSprite, hidingSprite;
@@ -111,6 +119,21 @@ harryCongrats = function () {
         PS.audioPlay( "fx_tada" );
 
         congratsSprite = mySprite;        // Save for using later
+
+        // deactivate arrows
+        paintRightArrow( false );
+        paintLeftArrow( false );
+
+        // end of game, stop showing notification sprite once you give journal to harry
+        if ( notificationSprite != "" ) {
+            PS.spriteShow( notificationSprite, false );
+        }
+        achievement = 7;              // game complete
+        gameDone = true;
+
+        // deactivate complete grid
+        deactivateGrid();
+
     } );
 }
 
@@ -240,6 +263,7 @@ tick = function () {
         if ( hidingObjOpacity < 2 ) {
             currentStatusText = "Collect the wallet!"
             PS.statusText( currentStatusText );
+            achievement = 3;              // wallet revealed
 
         }
 
@@ -386,6 +410,17 @@ paintLeftArrow = function ( activate ) {
     }
 };
 
+// deactivate the whole grid
+deactivateGrid = function () {
+
+    var x, y;
+    for ( y = 0; y < 32; y += 1 ) {
+        for ( x = 0; x < 32; x += 1 ) {
+            PS.active( x, y, 0 );
+        }
+    }
+}
+
 // present the inventory screen
 initInventory = function () {
 
@@ -438,9 +473,8 @@ initInventory = function () {
         journalInvSprite = mySprite;                // Save for using later
 
         // only visible if Coop's got the diary in his inventory
-        if ( journal ) {
+        if ( achievement == 6 ) {
             PS.spriteShow( journalInvSprite, true );
-
         } else {
             PS.spriteShow( journalInvSprite, false );
         }
@@ -461,9 +495,8 @@ initInventory = function () {
         objectXInvSprite = mySprite;                // Save for using later
 
         // only visible if Coop's got the wallet in his inventory
-        if ( objectX ) {
+        if ( achievement == 4 ) {
             PS.spriteShow( objectXInvSprite, true );
-
         } else {
             PS.spriteShow( objectXInvSprite, false );
         }
@@ -576,6 +609,9 @@ initLevel2 = function () {
         lelandSprite = mySprite;                // Save for using later
     } );
 
+    if ( achievement == 5 )                          // if the diary is offered
+        bocadilloDiarioLeland();
+
     // set level control variables
     level = 2;
     firstTime = false;
@@ -616,7 +652,7 @@ initLevel3 = function () {
 
     // load, create and draw Leland's wallet sprite
 
-    if ( !objectX ) {                               // Cooper hasn't got the wallet yet
+    if ( achievement < 4 ) {                               // Cooper hasn't got the wallet yet  aquí
         PS.imageLoad( "images/objectX.png", function ( data ) {
             myImage = data; // save image ID
 
@@ -672,7 +708,6 @@ PS.init = function ( system, options ) {
     PS.borderColor( PS.ALL, 6, PS.COLOR_WHITE );
 
 
-
     // load the background music
     PS.audioPlay( "twin_peaks_8_bit", {
         fileTypes: [ "mp3", "ogg" ],
@@ -680,6 +715,7 @@ PS.init = function ( system, options ) {
         volume: 0.08,
         loop: true
     } );
+
 
     // Start the timer function
     // Run at 20 frames/sec (every 3 ticks)
@@ -689,7 +725,6 @@ PS.init = function ( system, options ) {
 
     // load and draw the screen top background
     PS.imageLoad( "images/flechas_y_maletin.png", loadScreentop, 1 );
-
 
 
     // present level 1
@@ -704,6 +739,8 @@ PS.init = function ( system, options ) {
 PS.touch = function ( x, y, data, options ) {
 
     PS.audioPlay( "fx_click" );                     // provides click audio feedback
+
+    //PS.debug("\nAchievement = " + achievement);
 
     if ( ( x > 26 ) && ( y < 7 ) ) {                // CLICK ON RIGHT ARROW
         firstTime = false;
@@ -790,7 +827,7 @@ PS.touch = function ( x, y, data, options ) {
                 }
                 break;
             case 3:
-                if ( !objectX ) {
+                if ( achievement < 4 ) {     // aquí
                     PS.spriteDelete( objectXSprite );
                     PS.spriteDelete( hidingSprite );
                 }
@@ -810,10 +847,9 @@ PS.touch = function ( x, y, data, options ) {
         ( y < 7 ) ) {
 
         var prevStatusText = currentStatusText;     // save status text for later use
-        if( gameDone ){
-
-        }
-        else if ( inventory == false ) {                 // when not on inventory screen...
+        //if ( gameDone ) {
+        //} else
+        if ( inventory == false ) {                 // when not on inventory screen...
             switch ( level ) {                      // ...hide current sprites...
                 case 1:
                     PS.spriteShow( harrySprite, false );
@@ -925,7 +961,7 @@ PS.touch = function ( x, y, data, options ) {
             PS.statusText( prevStatusText );        // ...and the status text
             currentStatusText = prevStatusText;
 
-            inventory = false;                        // out of inventory screen
+            inventory = false;                      // out of inventory screen
 
         }
 
@@ -933,146 +969,125 @@ PS.touch = function ( x, y, data, options ) {
 
         switch ( level ) {
             case 1:                                 // when on level 1
-                if ( firstTime ) {                  // if first time on level 1
-                    initLevel1();                   // initialize and present level 1
 
-                } else {                            // if not first time
+                if ( ( ( x > 26 && x < 30 ) && ( y > 17 && y < 21 ) ) |     // click on Harry
+                    ( ( x == 28 ) && ( y == 21 ) ) |
+                    ( ( x > 25 && x < 31 ) && ( y > 21 && y < 27 ) )
+                    | ( ( x > 26 && x < 30 ) && y > 26 ) ) {
 
-                    if ( ( ( x > 26 && x < 30 ) && ( y > 17 && y < 21 ) ) |     // click on Harry
-                        ( ( x == 28 ) && ( y == 21 ) ) |
-                        ( ( x > 25 && x < 31 ) && ( y > 21 && y < 27 ) )
-                        | ( ( x > 26 && x < 30 ) && y > 26 ) ) {
+                    if ( achievement == 6 ) {       // if Cooper has diary
+                        harryCongrats();            // Harry congratulates Coop
+                        journal = false;            // Cooper delivers diary
 
-                        if ( journal ) {            // if Cooper has diary
-                            harryCongrats();        // Harry congratulates Coop
-                            journal = false;        // Cooper delivers diary
+                        DB.send();
 
-                            // deactivate arrows
-                            paintRightArrow( false );
-                            paintLeftArrow( false );
+                    } else if ( achievement < 6 ) {       // if game not done yet
+                        bocadilloDiarioHarry();     // Harry speaks to Cooper
+                        if ( achievement == 0 )
+                            achievement = 1;
 
-                            // end of game, stop showing notification sprite once you give journal to harry
-                            if(notificationSprite != ""){
-                                PS.spriteShow(notificationSprite, false);
-                            }
-                            gameDone = true;
-                            DB.send();
-
-                        } else if ( !gameDone ) {       // if game not done yet
-                            bocadilloDiarioHarry();     // Harry speaks to Cooper
-
-                            //change status text
-                            currentStatusText = "Find the diary!";
-                            PS.statusText( currentStatusText );
-                        }
+                        //change status text
+                        currentStatusText = "Find the diary!";
+                        PS.statusText( currentStatusText );
                     }
                 }
                 break;
+
             case 2:                                 // when on level 2
-                if ( firstTime ) {                  // if first time on level
-                    initLevel2()                    // initialize and present level 2
+                if ( ( x > 19 && x < 25 ) &&        // if click on diary...
+                    ( y > 18 && y < 24 ) &&
+                    ( achievement == 5 ) ) {         //...and Leland offered diary
 
-                } else {                            // if not first time
+                    // move diary to inventory
+                    journal = true;     // got diary
+                    PS.spriteDelete( journalSprite );
+                    journalSprite = "";
 
-                    if ( !journal ) {               // if Coop has not the diary yet
-                        if ( lelandOfferedJournal ) {   // but Leland offered it
-                            if ( ( x > 19 && x < 25 ) &&   // if click on diary
-                                ( y > 18 && y < 24 ) ) {
+                    // notify new item in inventory
+                    var mySprite;
+                    mySprite = PS.spriteSolid( 2, 2 );
+                    PS.spriteSolidColor( mySprite, PS.COLOR_RED );
+                    PS.spriteMove( mySprite, 20, 0 );
+                    notificationSprite = mySprite;
 
-                                // move diary to inventory
-                                journal = true;     // got diary
-                                PS.spriteDelete( journalSprite );
-                                journalSprite = "";
+                    // change status text
+                    currentStatusText = "You collected the diary!";
+                    PS.statusText( currentStatusText );
 
-                                // notify new item in inventory
-                                var mySprite;
-                                mySprite = PS.spriteSolid( 2, 2 );
-                                PS.spriteSolidColor( mySprite, PS.COLOR_RED );
-                                PS.spriteMove( mySprite, 20, 0 );
-                                notificationSprite = mySprite;
+                    achievement = 6// picked up diary
+                }
 
-                                // change status text
-                                currentStatusText = "You collected the diary!";
-                                PS.statusText( currentStatusText );
-                            }
-                        }
-                    }
+                if ( ( ( x > 26 && x < 30 ) && ( y > 17 && y < 21 ) ) |  // if click on Leland
+                    ( ( x == 28 ) && ( y == 21 ) ) |
+                    ( ( x > 25 && x < 31 ) && ( y > 21 && y < 27 ) ) |
+                    ( ( x > 26 && x < 30 ) && y > 26 ) ) {
 
-                    if ( ( ( x > 26 && x < 30 ) && ( y > 17 && y < 21 ) ) |  // if click on Leland
-                        ( ( x == 28 ) && ( y == 21 ) ) |
-                        ( ( x > 25 && x < 31 ) && ( y > 21 && y < 27 ) ) |
-                        ( ( x > 26 && x < 30 ) && y > 26 ) ) {
+                    if ( achievement == 4 ) {           // and Cooper got the wallet
 
-                        if ( objectX ) {            // and Cooper got the wallet
+                        objectX = false;                // Cooper delivers wallet
 
-                            objectX = false;        // Cooper delivers wallet
+                        // change status text
+                        currentStatusText = "Look! It's the diary!";
+                        PS.statusText( currentStatusText );
 
-                            // change status text
-                            currentStatusText = "Look! It's the diary!";
-                            PS.statusText( currentStatusText );
+                        bocadilloDiarioLeland();        // Leland speaks to Cooper
+                        achievement = 5;
 
-                            bocadilloDiarioLeland(); // Leland speaks to Cooper
+                    } else if ( achievement < 4 ) {     // Coop didn't get the wallet yet
 
-                        } else {                    // Coop didn't get the wallet yet
+                        //change status text
+                        currentStatusText = "Find Leland's wallet";
+                        PS.statusText( currentStatusText );
 
-                            //change status text
-                            currentStatusText = "Find Leland's wallet";
-                            PS.statusText( currentStatusText );
-
-                            bocadilloCruzLeland();  // Leland says no
-                        }
+                        bocadilloCruzLeland();          // Leland says no
+                        if ( achievement < 2 )
+                            achievement = 2;
                     }
                 }
+                //}
                 break;
 
-            case 3:                                 // when on level 3
+            case 3:                                     // when on level 3
 
-                if ( firstTime ) {                  // if first time on level
-                    initLevel3()                    // initialize and present level 3
+                if ( achievement == 3 ) {               // if wallet fully visible
+                    if ( ( x > ( xobjX - 1 ) &&         // if click on wallet
+                        x < ( xobjX + 5 ) ) &&
+                        ( y > ( yobjX - 1 ) &&
+                            y < ( yobjX + 5 ) ) ) {
 
-                } else {                            // if not first time
+                        // move wallet to inventory
+                        objectX = true;
+                        PS.spriteDelete( objectXSprite );
+                        objectXSprite = "";
 
-                    if ( !objectX ) {               // if Coop didn't get the wallet yet
+                        // notify new item in inventory
+                        var mySprite;
+                        mySprite = PS.spriteSolid( 2, 2 );
+                        PS.spriteSolidColor( mySprite, PS.COLOR_RED );
+                        PS.spriteMove( mySprite, 20, 0 );
+                        notificationSprite = mySprite;
 
-                        if ( hidingObjOpacity < 2 ) {       // if wallet fully visible
-                            if ( ( x > ( xobjX - 1 ) &&     // if click on wallet
-                                x < ( xobjX + 5 ) ) &&
-                                ( y > ( yobjX - 1 ) &&
-                                    y < ( yobjX + 5 ) ) ) {
+                        // change status text
+                        currentStatusText = "Good job! You found Leland's wallet!"
+                        PS.statusText( currentStatusText );
+                        achievement = 4;
+                    }
+                }
 
-                                // move wallet to inventory
-                                objectX = true;
-                                PS.spriteDelete( objectXSprite );
-                                objectXSprite = "";
+                if ( achievement == 2 ) {                   // if wallet not fully revealed
 
-                                // notify new item in inventory
-                                var mySprite;
-                                mySprite = PS.spriteSolid( 2, 2 );
-                                PS.spriteSolidColor( mySprite, PS.COLOR_RED );
-                                PS.spriteMove( mySprite, 20, 0 );
-                                notificationSprite = mySprite;
+                    // move Cooper = create new path to (x, yCoop)
+                    var line;
 
-                                // change status text
-                                currentStatusText = "Good job! You found Leland's wallet!"
-                                PS.statusText( currentStatusText );
-                            }
+                    // Calc a line from current position
+                    // to touched position
+                    line = PS.line( xCoop, yCoop, ( x - 2 ), yCoop );
 
-                        } else {                    // if wallet not fully revealed
-
-                            // move Cooper = create new path to (x, yCoop)
-                            var line;
-
-                            // Calc a line from current position
-                            // to touched position
-                            line = PS.line( xCoop, yCoop, ( x - 2 ), yCoop );
-
-                            // If line is not empty,
-                            // make it the new path
-                            if ( line.length > 0 ) {
-                                path = line;
-                                step = 0; // start at beginning
-                            }
-                        }
+                    // If line is not empty,
+                    // make it the new path
+                    if ( line.length > 0 ) {
+                        path = line;
+                        step = 0; // start at beginning
                     }
                 }
         }
