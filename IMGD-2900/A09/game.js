@@ -1695,7 +1695,12 @@ var initLevel9 = function () {
 var initLevel10 = function () {
 
     //change status text
-    setBanner( [ "Maybe this man knows what's going on..." ] );
+    if ( achievement == 22 ) {
+        setBanner( [ "toohs ot ymene eht no kcilC" ], 45 );
+    } else {
+        setBanner( [ "Maybe this man knows what's going on..." ] );
+    }
+
 
     // load and draw red room level
     PS.imageLoad( "images/RedRoom.png", loadBG, 1 );
@@ -1805,6 +1810,7 @@ var initLevel11 = function () {
     } );
 
     paintLeftArrow( true );         // activate before recoloring
+    paintRightArrow( true );
 
     // change look
     PS.border( PS.ALL, PS.ALL, 0 );         // remove borders
@@ -1814,7 +1820,6 @@ var initLevel11 = function () {
     // set level control variables
     level = 11;
 
-    //paintRightArrow( false );
 };
 
 // manage clicks on left arrow
@@ -1892,17 +1897,19 @@ var clickLeftArrow = function () {
     }
 
     // go to previous level
-    if ( achievement < 9 ) {
-        level -= 1;
-    } else {
-        level = 1;
-    }
-    switch ( level ) {
-        case 1:
-            initLevel1();
-            break;
-        case 2:                         // rest of levels unreachable from left arrow
-            initLevel2();
+    if ( level != 11 ) {
+        if ( achievement < 9 ) {
+            level -= 1;
+        } else {
+            level = 1;
+        }
+        switch ( level ) {
+            case 1:
+                initLevel1();
+                break;
+            case 2:                         // rest of levels unreachable from left arrow
+                initLevel2();
+        }
     }
 };
 
@@ -1910,7 +1917,7 @@ var clickLeftArrow = function () {
 var clickRightArrow = function () {
 
     // nuke sprites from previous level
-    if ( level != 9 ) {                              // except for level 9...
+    if ( level != 9 && level != 11 ) {                              // except for level 9...
         PS.spriteDelete( cooperSprite );            // ...Cooper is always there
     }
     switch ( level ) {                              // rest of sprites
@@ -2000,6 +2007,7 @@ var clickRightArrow = function () {
             break;
         case 11:
             initLevel11();
+            break;
 
     }
 };
@@ -2089,6 +2097,10 @@ var clickInventory = function () {
                 if ( owlAwakeSprite != "" ) {
                     PS.spriteShow( owlAwakeSprite, false );
                 }
+                break;
+            case 8:
+                //NUEVO
+                initCode();
             // no additional sprites in rest of levels
         }
         if ( achievement != 8 ) {
@@ -2186,6 +2198,7 @@ var clickInventory = function () {
                     paintRightArrow( true );
                 }
         }
+
         PS.statusText( prevStatusText );        // ...and the status text
         currentStatusText = prevStatusText;
 
@@ -2218,7 +2231,7 @@ var clickInventoryScreen = function ( x, y ) {
         inventory = false;
 
     } else if ( ( x > 23 && x < 30 ) && ( y > 8 && y < 15 )
-        && ( achievement == 13 ) ) {                    //click on toilet paper
+        && ( achievement == 13 && level == 6 ) ) {                    //click on toilet paper
         hideInvSprites();
         initLevel6();
         achievement = 14;
@@ -2408,6 +2421,7 @@ var clickKeypad = function ( x, y, data ) {
                 openDoorSprite = mySprite;                // Save for using later
             } );
 
+
             paintRightArrow( true );                // go ahead
         }
     } else {
@@ -2418,7 +2432,15 @@ var clickKeypad = function ( x, y, data ) {
 // manage clicks on level 1 (sheriff station)
 var clickLevel1 = function ( x, y ) {
 
-    if ( achievement == 8 ) {                   // click on big note
+    if ( ( achievement == 8 ) && ( y > 6 ) ) {                   // click on big note
+
+        var xIn, yIn;                  // re-active inventory after Big Note
+        for ( xIn = 0; xIn < 27; xIn++ ) {
+            for ( yIn = 0; yIn < 7; yIn++ ) {
+                PS.active( xIn, yIn, 1 );
+            }
+        }
+
         PS.spriteDelete( bigNoteSprite );
         achievement = 9;
 
@@ -2521,6 +2543,14 @@ var clickLevel1 = function ( x, y ) {
                 bigNoteSprite = mySprite;                // Save for using later
             } );
             achievement = 8;
+
+            var xIn, yIn;                  // inventory inactive when Big Note on screen
+            for ( xIn = 0; xIn < 27; xIn++ ) {
+                for ( yIn = 0; yIn < 7; yIn++ ) {
+                    PS.active( xIn, yIn, 0 );
+                }
+            }
+
         }
     }
 };
@@ -2636,6 +2666,9 @@ var clickLevel4 = function ( x, y ) {
                     rockState = rockState + 1;
                     PS.spriteDelete( rockSprite );
                     PS.imageLoad( rockFiles[ rockState ], function ( data ) {
+
+                        textEnd = false;                  // avoid uncontroled clicks
+
                         myImage = data; // save image ID
 
                         // Create an image sprite from the loaded image
@@ -2647,6 +2680,8 @@ var clickLevel4 = function ( x, y ) {
                         PS.spriteMove( mySprite, 9, 15 );
 
                         rockSprite = mySprite;      // Save for using later
+
+                        textEnd = true;
                     } );
 
                 } else if ( rockState > 7 ) {       // toilet paper revealed
@@ -2738,7 +2773,7 @@ var clickLevel5 = function ( x, y ) {
             setBanner( [ "Ah yes, you’re the FBI agent!",
                 "So happy to meet you,",
                 "my name’s Pete Martell.",
-                "I head about the girl indeed,", "" +
+                "I heard about the girl indeed,",
                 "I was the very one to find her!",
                 " Oh I was so upset.",
                 "I’d just caught a giant sturgeon too.",
@@ -2946,6 +2981,8 @@ var clickLevel10 = function ( x, y ) {
 
 // manage clicks on level 11 (fighting the coronavirus)
 var clickLevel11 = function ( x, y ) {
+
+    //textEnd = false;                              // avoid uncontrolled clicks
 
     if ( achievement != 23 ) {
         //zone 1
@@ -3248,7 +3285,7 @@ var clickLevel11 = function ( x, y ) {
             }
         }
 
-        if ( zonasMuertas == 10 ) {             // half way thru
+        if ( zonasMuertas == 10 && achievement != 24 ) {             // half way thru
             achievement = 23;
         } else if ( zonasMuertas == 14 ) {      // covid killed
             achievement == 25;
@@ -3286,14 +3323,20 @@ var clickLevel11 = function ( x, y ) {
             setBanner( [ "Remember the owl's advice..." ] );
         }
     }
-}
 
+    /*
+        setTimeout( function () {
+        textEnd = true;
+    }, 2000 );
+     */
+
+
+};
 
 // SHUTDOWN MANAGEMENT
 PS.shutdown = function ( options ) {
     //DB.send();            // inactive while on dev
 };
-
 
 // GAME INITIALIZATION
 PS.init = function ( system, options ) {
@@ -3368,7 +3411,6 @@ PS.init = function ( system, options ) {
     initLevel1();
 };
 
-
 // POINT-AND-CLICK HANDLING
 PS.touch = function ( x, y, data, options ) {
 
@@ -3378,7 +3420,7 @@ PS.touch = function ( x, y, data, options ) {
         "\nLevel = " + level +
         "\nAchievement = " + achievement +
         "\n\n" );
-     */
+    */
 
     if ( textEnd ) {
 
@@ -3387,7 +3429,7 @@ PS.touch = function ( x, y, data, options ) {
         } );
 
         if ( level == 11 && achievement == 23 &&
-            ( x < 12 && y < 7 ) ) {                     // CLICK ON INV (LEVEL 11)
+            ( ( x < 12 && x > 4 ) && y < 7 ) ) {                     // CLICK ON INV (LEVEL 11)
             clickInventory();
         }
 
@@ -3395,14 +3437,14 @@ PS.touch = function ( x, y, data, options ) {
             clickKeypad( x, y, data );
         }
 
-        if ( ( x > 26 ) && ( y < 7 ) ) {                // CLICK ON RIGHT ARROW
+        if ( ( x > 26 ) && ( y < 7 ) && ( level != 11 ) ) {                // CLICK ON RIGHT ARROW
             clickRightArrow();
 
-        } else if ( ( x < 5 ) && ( y < 7 ) ) {          // CLICK ON LEFT ARROW
+        } else if ( ( x < 5 ) && ( y < 7 ) && ( level != 11 ) ) {          // CLICK ON LEFT ARROW
             clickLeftArrow();
 
         } else if ( ( x > 11 && x < 20 ) &&             // CLICK ON INVENTORY
-            ( y < 7 ) && !( level == 9 ) ) {
+            ( y < 7 ) && !( level == 9 ) && !( level == 11 ) ) {
             clickInventory();
 
         } else {                                        // CLICK ON MAIN SCREEN
@@ -3451,13 +3493,12 @@ PS.touch = function ( x, y, data, options ) {
     }
 };
 
-
 // HOVERING OVER ITEMS HANDLING
 PS.enter = function ( x, y ) {
     if ( inventory ) {
         if ( ( x > 9 && x < 15 ) && ( y > 9 && y < 15 ) ) {
             if ( journal ) {
-                PS.statusText( "Journal" );
+                PS.statusText( "Diary" );
             } else {
                 PS.statusText( "???" );
             }
@@ -3500,10 +3541,10 @@ PS.enter = function ( x, y ) {
             }
         }
     }
-}
+};
 
 PS.exit = function ( x, y ) {
     if ( inventory ) {
         PS.statusText( "Welcome to your inventory!" );
     }
-}
+};
