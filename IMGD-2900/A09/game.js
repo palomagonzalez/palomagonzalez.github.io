@@ -1668,6 +1668,15 @@ var initLevel8 = function () {
 // present level 9 (giant abyss)
 var initLevel9 = function () {
 
+    // reactivate all beads
+    var x, y;
+
+    for ( x = 0; x < 32; x++ ) {
+        for ( y = 7; y < 32; y++ ) {
+            PS.active( x, y, true );
+        }
+    }
+
 // load and draw abyss level
     PS.imageLoad( "images/giant_abyss.png", loadBG, 1 );
 
@@ -2437,7 +2446,7 @@ var clickLevel1 = function ( x, y ) {
         var xIn, yIn;                  // re-active inventory after Big Note
         for ( xIn = 0; xIn < 27; xIn++ ) {
             for ( yIn = 0; yIn < 7; yIn++ ) {
-                PS.active( xIn, yIn, 1 );
+                PS.active( xIn, yIn, true );
             }
         }
 
@@ -2547,7 +2556,7 @@ var clickLevel1 = function ( x, y ) {
             var xIn, yIn;                  // inventory inactive when Big Note on screen
             for ( xIn = 0; xIn < 27; xIn++ ) {
                 for ( yIn = 0; yIn < 7; yIn++ ) {
-                    PS.active( xIn, yIn, 0 );
+                    PS.active( xIn, yIn, false );
                 }
             }
 
@@ -3444,7 +3453,7 @@ PS.touch = function ( x, y, data, options ) {
             clickLeftArrow();
 
         } else if ( ( x > 11 && x < 20 ) &&             // CLICK ON INVENTORY
-            ( y < 7 ) && !( level == 9 ) && !( level == 11 ) ) {
+            ( y < 7 ) && !( level == 8 ) && !( level == 9 ) && !( level == 11 ) ) {
             clickInventory();
 
         } else {                                        // CLICK ON MAIN SCREEN
